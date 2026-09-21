@@ -131,10 +131,18 @@ Access the extension configuration through your browser:
 - Customize the prompt template injected into companion contexts.
 
 ### Tab 2: Diseases & Medicine
-- Toggle disease tracking and visual symptom analysis.
+- Toggle global disease perception and prompt injection.
 - Set minimum disease stage threshold (Stage 1 Mild vs. Stage 2 Acute).
-- Toggle ambient proximity barks and configure the cooldown timer (default: 180s).
-- Re-run Oghma Medical Lore database migrations with one click.
+- Toggle ambient proximity barks and configure the cooldown timer (default: 300s).
+- Customize disease observation prompt template.
+- Re-seed Oghma Medical Lore database migrations with one click.
+
+### Tab 3: Mod Compatibility & Add-ons
+Every auxiliary mod beyond core SunHelm (`SunHelmSurvival.esp`) is fully modular and toggleable:
+- **SunHelm Diseases (`SunHelmDiseases.esp`):** Enable/disable 3-tier disease progression (Stage 1 Mild &rarr; Stage 2 Acute &rarr; Stage 3 Severe Emergency). When bypassed, illnesses are treated as standard static single-stage afflictions.
+- **Water-Borne Diseases (`SunHelmDirtyWater.esp`):** Enable/disable detection of illnesses contracted from drinking untreated wild water.
+- **Immersive Diseases 2.0 (`Immersive Diseases.esp`):** Enable/disable visual overlay cues (purple veins, raw blotches, boils, necrotic lesions, rigid posture, limp arm). When bypassed, NPCs only comment on general sickness without describing cosmetic textures you may not have installed.
+- **Two-Tier Oghma Clinical Lore:** Enable/disable advanced clinical pathology for trained alchemists and scholars (Arcadia, Danica, Farengar, etc.). When bypassed, all NPCs use vanilla folklore names and divine shrine advice.
 
 ---
 

@@ -9,5 +9,9 @@
     "min_disease_stage": 2,
     "enable_ambient_barks": true,
     "ambient_bark_cooldown_seconds": 300,
-    "disease_prompt_template": "Health Observation: The player is afflicted with {disease_stage} ({visual_cues}). {knowledge_context}"
+    "disease_prompt_template": "Health Observation: You visibly notice the player exhibiting {visual_cues}. {knowledge_context}",
+    "mod_sunhelm_diseases": true,
+    "mod_waterborne_diseases": true,
+    "mod_immersive_diseases": true,
+    "mod_oghma_clinical_lore": true
 }

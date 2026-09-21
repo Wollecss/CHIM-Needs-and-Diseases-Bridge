@@ -50,12 +50,15 @@ if (is_array($req)) {
                 ? ($stageLabel . ' ' . $diseaseName)
                 : $diseaseName;
 
+            $isWaterborne = (strpos($visualCues, 'waterborne') !== false);
+
             $state['player_disease'] = [
                 'has_disease'    => ($stage > 0 && strcasecmp($diseaseName, 'None') !== 0),
                 'disease_name'   => $diseaseName,
                 'stage'          => $stage,
                 'stage_label'    => $formattedStage,
                 'visual_cues'    => $visualCues,
+                'is_waterborne'  => $isWaterborne,
                 'updated_at'     => date('Y-m-d H:i:s')
             ];
             $state['updated_at'] = date('Y-m-d H:i:s');

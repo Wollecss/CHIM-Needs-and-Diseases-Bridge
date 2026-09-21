@@ -66,35 +66,62 @@ if (!empty($settings["track_diseases"])) {
         $dName       = trim($diseaseData["disease_name"] ?? '');
         $stageLabel  = trim($diseaseData["stage_label"] ?? $dName);
         $rawCues     = trim($diseaseData["visual_cues"] ?? '');
+        $isWaterborne = (!empty($diseaseData["is_waterborne"]) || strpos($rawCues, 'waterborne') !== false);
 
-        // Only inject if disease stage meets threshold (or if food poisoning)
-        if ($stage >= $minDisStage || strcasecmp($dName, 'Food Poisoning') === 0) {
+        // Modular Toggle 1: Water-Borne Diseases (SunHelmDirtyWater.esp)
+        $enableWaterborne = $settings["mod_waterborne_diseases"] ?? true;
+        if ($isWaterborne && !$enableWaterborne) {
+            // Water-borne illness tracking toggled off; ignore dirty water contractions
+            $stage = 0;
+        }
+
+        // Modular Toggle 2: SunHelm Diseases Progression (SunHelmDiseases.esp)
+        $enableStageProgression = $settings["mod_sunhelm_diseases"] ?? true;
+        if (!$enableStageProgression && $stage > 0) {
+            // Flatten to standard single-stage illness without acute/severe progression
+            $stage = 1;
+            $stageLabel = $dName;
+        }
+
+        // Only inject if disease stage meets threshold (or if food poisoning / single-stage)
+        $meetsThreshold = $enableStageProgression 
+            ? ($stage >= $minDisStage || strcasecmp($dName, 'Food Poisoning') === 0)
+            : ($stage >= 1);
+
+        if ($stage > 0 && $meetsThreshold) {
             
-            // Map raw cue flags to evocative physical descriptions
-            $cueMap = [
-                'locked_joints'   => 'unnatural crooked locked elbows and rigid joint posture',
-                'limp_arm'        => 'left arm hanging loose and flaccid at their side',
-                'violent_cough'   => 'paroxysmal coughing fits with audible bronchial rattling in the chest',
-                'purple_veins'    => 'prominent dark purple veins bulging beneath the skin',
-                'boils'           => 'clusters of burning raised boils across their limbs',
-                'blotches'        => 'raw, reddish-purple epidermal blotches across their skin',
-                'headache'        => 'frequently clutching their temples in acute cranial distress',
-                'necrotic_skin'   => 'decayed, necrotic dark lesions marking their face and neck',
-                'stomach_cramps'  => 'doubled over clutching their abdomen in violent nausea and cramps',
-                'chills_shiver'   => 'uncontrollable teeth-chattering rigors and icy skin pallor',
-                'tremors'         => 'violent involuntary kinetic tremors shaking their hands'
-            ];
+            // Modular Toggle 3: Immersive Diseases 2.0 (Immersive Diseases.esp)
+            $enableImmersive = $settings["mod_immersive_diseases"] ?? true;
+            if ($enableImmersive) {
+                // Map raw cue flags to evocative physical descriptions
+                $cueMap = [
+                    'locked_joints'   => 'unnatural crooked locked elbows and rigid joint posture',
+                    'limp_arm'        => 'left arm hanging loose and flaccid at their side',
+                    'violent_cough'   => 'paroxysmal coughing fits with audible bronchial rattling in the chest',
+                    'purple_veins'    => 'prominent dark purple veins bulging beneath the skin',
+                    'boils'           => 'clusters of burning raised boils across their limbs',
+                    'blotches'        => 'raw, reddish-purple epidermal blotches across their skin',
+                    'headache'        => 'frequently clutching their temples in acute cranial distress',
+                    'necrotic_skin'   => 'decayed, necrotic dark lesions marking their face and neck',
+                    'stomach_cramps'  => 'doubled over clutching their abdomen in violent nausea and cramps',
+                    'chills_shiver'   => 'uncontrollable teeth-chattering rigors and icy skin pallor',
+                    'tremors'         => 'violent involuntary kinetic tremors shaking their hands'
+                ];
 
-            $visualDescriptions = [];
-            foreach (explode(',', $rawCues) as $cue) {
-                $cue = trim($cue);
-                if (isset($cueMap[$cue])) {
-                    $visualDescriptions[] = $cueMap[$cue];
+                $visualDescriptions = [];
+                foreach (explode(',', $rawCues) as $cue) {
+                    $cue = trim($cue);
+                    if ($cue !== 'waterborne' && isset($cueMap[$cue])) {
+                        $visualDescriptions[] = $cueMap[$cue];
+                    }
                 }
+                $visualText = !empty($visualDescriptions)
+                    ? implode('; ', $visualDescriptions)
+                    : 'visible signs of physical distress and exhaustion';
+            } else {
+                // Immersive Diseases disabled: generic non-cosmetic malaise
+                $visualText = 'visible signs of illness and physical fatigue';
             }
-            $visualText = !empty($visualDescriptions)
-                ? implode('; ', $visualDescriptions)
-                : 'visible signs of physical distress and exhaustion';
 
             // Determine if current speaking NPC is a medical/scholarly expert
             $speakerName = trim((string)($GLOBALS["HERIKA_NAME"] ?? ''));
@@ -194,8 +221,10 @@ if (!empty($settings["track_diseases"])) {
                 ]
             ];
 
-            // Build Tier-Appropriate Context
-            if ($isExpert && isset($clinicalInfo[$dName])) {
+            // Modular Toggle 4: Two-Tier Oghma Clinical Lore System
+            $enableClinicalLore = $settings["mod_oghma_clinical_lore"] ?? true;
+
+            if ($enableClinicalLore && $isExpert && isset($clinicalInfo[$dName])) {
                 $c = $clinicalInfo[$dName];
                 $knowledgeContext = "As a trained apothecary, healer, or scholar, you diagnose this as {$c['name']} (known to commoners as {$dName}), caused by {$c['pathology']}. You know it requires {$c['cure']} to cure.";
             } else {
@@ -203,15 +232,28 @@ if (!empty($settings["track_diseases"])) {
             }
 
             // Urgency Directive based on stage
-            if ($stage >= 3) {
+            if ($enableStageProgression && $stage >= 3) {
                 $urgency = "CRITICAL MEDICAL EMERGENCY: The player is in late-stage agony and physical collapse. Your dialogue MUST reflect alarm, urging immediate cessation of travel and treatment.";
-            } elseif ($stage == 2) {
+            } elseif ($enableStageProgression && $stage == 2) {
                 $urgency = "ACUTE CONCERN: The player's symptoms are conspicuous and impairing. Express concern or caution about contagion naturally in your reply.";
             } else {
                 $urgency = "MILD SYMPTOM: The condition is subtle. Remark on their tired or unwell appearance if the topic fits the moment.";
             }
 
-            $diseaseInjection = "Health Observation: You visibly notice the player exhibiting {$visualText}. {$knowledgeContext} [Behavior Directive: {$urgency}]";
+            $diseaseTemplate = $settings["disease_prompt_template"]
+                ?? "Health Observation: You visibly notice the player exhibiting {visual_cues}. {knowledge_context}";
+
+            // If template uses placeholders, substitute them; otherwise use default formatting
+            if (strpos($diseaseTemplate, '{visual_cues}') !== false || strpos($diseaseTemplate, '{disease_stage}') !== false) {
+                $diseaseInjection = str_replace(
+                    ['{disease_stage}', '{visual_cues}', '{knowledge_context}'],
+                    [$stageLabel, $visualText, $knowledgeContext . " [Behavior Directive: {$urgency}]"],
+                    $diseaseTemplate
+                );
+            } else {
+                $diseaseInjection = "Health Observation: You visibly notice the player exhibiting {$visualText}. {$knowledgeContext} [Behavior Directive: {$urgency}]";
+            }
+
             $injections[] = $diseaseInjection;
         }
     }

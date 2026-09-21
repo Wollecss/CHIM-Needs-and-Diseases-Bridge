@@ -325,7 +325,52 @@ Health Observation: You visibly notice the player exhibiting unnatural crooked l
 
 ---
 
-## 6. Oghma Medical Lore Compendium (`oghma_diseases.sql`)
+## 6. Modular Mod Compatibility & WebUI Toggle System
+
+To ensure complete independence from non-core mods, the bridge employs a **Zero-Dependency Architecture**. While `SunHelmSurvival.esp` is the only required master, four auxiliary systems can be toggled on or off at runtime via the WebUI (`config.php` &rarr; **Tab 3: Mod Compatibility**):
+
+```mermaid
+flowchart TD
+    State["state.json (Raw Skyrim Data)"] --> CPre["context_pre.php"]
+    Settings["settings.json (WebUI Toggles)"] --> CPre
+
+    subgraph Toggles ["Tab 3: Mod Compatibility Toggles"]
+        T1["mod_sunhelm_diseases\n(SunHelmDiseases.esp)"]
+        T2["mod_waterborne_diseases\n(SunHelmDirtyWater.esp)"]
+        T3["mod_immersive_diseases\n(Immersive Diseases 2.0)"]
+        T4["mod_oghma_clinical_lore\n(Two-Tier Medical Lore)"]
+    end
+
+    Toggles --> Settings
+
+    CPre -->|mod_sunhelm_diseases = false| Flatten["Flatten to Stage 1 (Static Skyrim Disease)"]
+    CPre -->|mod_waterborne_diseases = false| SuppressWater["Suppress dirty-water contractions"]
+    CPre -->|mod_immersive_diseases = false| GenericCues["Suppress visual overlays -> 'general fatigue/malaise'"]
+    CPre -->|mod_oghma_clinical_lore = false| FolkOnly["All NPCs use vanilla folk names & shrines"]
+
+    Flatten --> Prompt["Engineered LLM Prompt"]
+    SuppressWater --> Prompt
+    GenericCues --> Prompt
+    FolkOnly --> Prompt
+```
+
+### Toggle Mechanics & Fallbacks:
+1. **SunHelm Diseases (`mod_sunhelm_diseases`):**
+   - *Enabled:* Evaluates full 3-stage progression (Stage 1 Mild &rarr; Stage 2 Acute &rarr; Stage 3 Severe) with emergency directives.
+   - *Bypassed:* Flattens `$stage = 1` and `$stageLabel = $dName` (e.g. "Rockjoint" instead of "Acute Rockjoint"). NPCs react with gentle concern rather than emergency panic.
+2. **Water-Borne Diseases (`mod_waterborne_diseases`):**
+   - *Enabled:* Catches illnesses contracted from drinking raw lake/river water (`_shWater*` spells with `waterborne` cue).
+   - *Bypassed:* Silently drops dirty water contraction events from reaching NPC prompts.
+3. **Immersive Diseases 2.0 (`mod_immersive_diseases`):**
+   - *Enabled:* Translates raw cue flags into detailed RaceMenu visual descriptions (bulging purple veins, locked elbows, limp arm, boils, blotches).
+   - *Bypassed:* Replaces overlay text with `"visible signs of illness and physical fatigue"`. This guarantees NPCs will never hallucinate visual textures or posture meshes that are not actually installed in the player's game.
+4. **Two-Tier Oghma Clinical Lore (`mod_oghma_clinical_lore`):**
+   - *Enabled:* Expert alchemists, healers, scholars, and mages diagnose true clinical pathology (Tetanus, Breakbone Fever, Meningitis, Dracunculiasis) and prescribe specific ingredients.
+   - *Bypassed:* All NPCs (including master apothecaries) use traditional Skyrim folklore names and divine shrine advice.
+
+---
+
+## 7. Oghma Medical Lore Compendium (`oghma_diseases.sql`)
 
 ### Database Table: `public.oghma`
 All 15 diseases are stored as knowledge entries with PostgreSQL full-text search vectors:
@@ -354,7 +399,7 @@ All 15 diseases are stored as knowledge entries with PostgreSQL full-text search
 
 ---
 
-## 7. How to Extend This Project
+## 8. How to Extend This Project
 
 ### Adding a New Disease (e.g. from Beyond Skyrim or a Custom Mod)
 

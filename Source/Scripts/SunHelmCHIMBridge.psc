@@ -449,7 +449,11 @@ Function CheckDiseases()
         dName  = "Dampworm"
         dStage = 2
         dCues  = "boils"
-    elseif ((_shDampworm1 && player.HasSpell(_shDampworm1)) || (_shWaterDampworm && player.HasSpell(_shWaterDampworm)))
+    elseif (_shWaterDampworm && player.HasSpell(_shWaterDampworm))
+        dName  = "Dampworm"
+        dStage = 1
+        dCues  = "boils,waterborne"
+    elseif (_shDampworm1 && player.HasSpell(_shDampworm1))
         dName  = "Dampworm"
         dStage = 1
         dCues  = "boils"
@@ -462,7 +466,11 @@ Function CheckDiseases()
         dName  = "Swamp Fever"
         dStage = 2
         dCues  = "boils,chills_shiver"
-    elseif ((_shSwampFever1 && player.HasSpell(_shSwampFever1)) || (_shWaterSwampFever && player.HasSpell(_shWaterSwampFever)))
+    elseif (_shWaterSwampFever && player.HasSpell(_shWaterSwampFever))
+        dName  = "Swamp Fever"
+        dStage = 1
+        dCues  = "boils,waterborne"
+    elseif (_shSwampFever1 && player.HasSpell(_shSwampFever1))
         dName  = "Swamp Fever"
         dStage = 1
         dCues  = "boils"
@@ -475,7 +483,11 @@ Function CheckDiseases()
         dName  = "Chills"
         dStage = 2
         dCues  = "chills_shiver,purple_veins"
-    elseif ((_shChills1 && player.HasSpell(_shChills1)) || (_shWaterChills && player.HasSpell(_shWaterChills)))
+    elseif (_shWaterChills && player.HasSpell(_shWaterChills))
+        dName  = "Chills"
+        dStage = 1
+        dCues  = "chills_shiver,waterborne"
+    elseif (_shChills1 && player.HasSpell(_shChills1))
         dName  = "Chills"
         dStage = 1
         dCues  = "chills_shiver"
@@ -488,7 +500,11 @@ Function CheckDiseases()
         dName  = "Feeble Limb"
         dStage = 2
         dCues  = "necrotic_skin"
-    elseif ((_shFeebleLimb1 && player.HasSpell(_shFeebleLimb1)) || (_shWaterFeebleLimb && player.HasSpell(_shWaterFeebleLimb)))
+    elseif (_shWaterFeebleLimb && player.HasSpell(_shWaterFeebleLimb))
+        dName  = "Feeble Limb"
+        dStage = 1
+        dCues  = "necrotic_skin,waterborne"
+    elseif (_shFeebleLimb1 && player.HasSpell(_shFeebleLimb1))
         dName  = "Feeble Limb"
         dStage = 1
         dCues  = "necrotic_skin"
@@ -501,7 +517,11 @@ Function CheckDiseases()
         dName  = "Shakes"
         dStage = 2
         dCues  = "tremors,blotches"
-    elseif ((_shShakes1 && player.HasSpell(_shShakes1)) || (_shWaterShakes && player.HasSpell(_shWaterShakes)))
+    elseif (_shWaterShakes && player.HasSpell(_shWaterShakes))
+        dName  = "Shakes"
+        dStage = 1
+        dCues  = "tremors,waterborne"
+    elseif (_shShakes1 && player.HasSpell(_shShakes1))
         dName  = "Shakes"
         dStage = 1
         dCues  = "tremors"
@@ -514,7 +534,11 @@ Function CheckDiseases()
         dName  = "Wither"
         dStage = 2
         dCues  = "blotches"
-    elseif ((_shWither1 && player.HasSpell(_shWither1)) || (_shWaterWither && player.HasSpell(_shWaterWither)))
+    elseif (_shWaterWither && player.HasSpell(_shWaterWither))
+        dName  = "Wither"
+        dStage = 1
+        dCues  = "blotches,waterborne"
+    elseif (_shWither1 && player.HasSpell(_shWither1))
         dName  = "Wither"
         dStage = 1
         dCues  = "blotches"
@@ -527,7 +551,11 @@ Function CheckDiseases()
         dName  = "Droops"
         dStage = 2
         dCues  = "limp_arm"
-    elseif ((_shDroops1 && player.HasSpell(_shDroops1)) || (_shWaterDroops && player.HasSpell(_shWaterDroops)))
+    elseif (_shWaterDroops && player.HasSpell(_shWaterDroops))
+        dName  = "Droops"
+        dStage = 1
+        dCues  = "limp_arm,waterborne"
+    elseif (_shDroops1 && player.HasSpell(_shDroops1))
         dName  = "Droops"
         dStage = 1
         dCues  = "limp_arm"
