@@ -20,8 +20,8 @@ NPCs throughout Skyrim now perceive, react to, and diagnose the player's real-ti
 - Dynamically injects physical status cues into dialogue prompts when threshold stages are reached.
 
 ### 2. Multi-Stage Disease Tracking & Overlay Mirroring
-- Full support for all 3 SunHelm disease progression stages plus Food Poisoning:
-  - **Stage 1 (Mild):** Subtle symptoms that draw minimal attention.
+- Full support for all 3 SunHelm disease progression stages, Food Poisoning, and **Water-Borne Diseases (`SunHelmDirtyWater.esp`)**:
+  - **Stage 1 (Mild):** Subtle symptoms that draw minimal attention (including initial contraction from drinking untreated dirty water).
   - **Stage 2 (Acute):** Prominent physical impairments and visual signs triggering acute concern.
   - **Stage 3 (Severe):** Critical, incapacitating emergency states.
 - Automatically maps Immersive Diseases 2.0 and RaceMenu visual overlays into physical prompt cues:
@@ -82,14 +82,15 @@ NPCs react according to their social class and profession:
 
 ---
 
-## Requirements
-
+## Requirements & Compatibility
+ 
 - **Skyrim Special Edition / Anniversary Edition** (1.5.97 / 1.6.x)
 - [SKSE64](https://skse.silverlock.org/)
 - [CHIM - AI Agent](https://github.com/) & HerikaServer
 - [SunHelm Survival and needs](https://www.nexusmods.com/skyrimspecialedition/mods/39414)
 - [SunHelm Diseases](https://www.nexusmods.com/skyrimspecialedition/mods/39414)
-- *(Optional but Recommended)* [Immersive Diseases 2.0](https://www.nexusmods.com/skyrimspecialedition/mods/79111) for visual skin & vein overlays.
+- *(Optional & Supported)* **Water-Borne Diseases for SunHelm (`SunHelmDirtyWater.esp`)** - Dynamic dirty water contraction spells detected natively without master dependencies.
+- *(Optional & Supported)* [Immersive Diseases 2.0](https://www.nexusmods.com/skyrimspecialedition/mods/79111) for visual skin & vein overlays.
 
 ---
 

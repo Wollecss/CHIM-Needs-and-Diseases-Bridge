@@ -112,7 +112,42 @@ EndFunction
 ```
 This guarantees zero Papyrus VM stack crashes even if optional ESPs are rearranged or missing from the user's load order.
 
-### C. Ambient Proximity Barks (Path B)
+### C. Water-Borne Diseases Integration (`SunHelmDirtyWater.esp`)
+In SunHelm's survival ecosystem, drinking untreated water from lakes, rivers, or streams does not use Skyrim's base disease forms; instead, `SunHelmDirtyWater.esp` applies dedicated waterborne contagion spells directly to the player:
+
+| Disease Spell | FormID | Target Illness | Visual Cue Mirroring |
+|---|---|---|---|
+| `WaterDiseaseChills` | `0x000812` | Chills (Stage 1) | `chills_shiver` |
+| `WaterDiseaseDampworm` | `0x000813` | Dampworm (Stage 1) | `boils` |
+| `WaterDiseaseDroops` | `0x000814` | Droops (Stage 1) | `limp_arm` |
+| `WaterDiseaseFeebleLimb` | `0x000815` | Feeble Limb (Stage 1) | `necrotic_skin` |
+| `WaterDiseaseShakes` | `0x000816` | Shakes (Stage 1) | `tremors` |
+| `WaterDiseaseSwampFever` | `0x000817` | Swamp Fever (Stage 1) | `boils` |
+| `WaterDiseaseWither` | `0x000818` | Wither (Stage 1) | `blotches` |
+
+#### Detection Implementation:
+In `InitDiseases()`, the script attempts to resolve `0x000812` from `SunHelmDirtyWater.esp`. If found, all 7 waterborne spells are bound into memory:
+```papyrus
+if (Game.GetFormFromFile(0x000812, "SunHelmDirtyWater.esp"))
+    _shWaterChills     = Game.GetFormFromFile(0x000812, "SunHelmDirtyWater.esp") as Spell
+    _shWaterDampworm   = Game.GetFormFromFile(0x000813, "SunHelmDirtyWater.esp") as Spell
+    _shWaterDroops     = Game.GetFormFromFile(0x000814, "SunHelmDirtyWater.esp") as Spell
+    _shWaterFeebleLimb = Game.GetFormFromFile(0x000815, "SunHelmDirtyWater.esp") as Spell
+    _shWaterShakes     = Game.GetFormFromFile(0x000816, "SunHelmDirtyWater.esp") as Spell
+    _shWaterSwampFever = Game.GetFormFromFile(0x000817, "SunHelmDirtyWater.esp") as Spell
+    _shWaterWither     = Game.GetFormFromFile(0x000818, "SunHelmDirtyWater.esp") as Spell
+endif
+```
+In `CheckDiseases()`, the Stage 1 checks evaluate both standard and waterborne forms:
+```papyrus
+elseif ((_shDampworm1 && player.HasSpell(_shDampworm1)) || (_shWaterDampworm && player.HasSpell(_shWaterDampworm)))
+    dName  = "Dampworm"
+    dStage = 1
+    dCues  = "boils"
+```
+If the user does not use `SunHelmDirtyWater.esp`, the form pointers remain `None`, creating zero log spam, zero errors, and zero runtime overhead.
+
+### D. Ambient Proximity Barks (Path B)
 When the player has a noticeable illness (Stage $\ge 2$), the script uses CHIM's spatial agent queries:
 ```papyrus
 if (dStage >= 2)

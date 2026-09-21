@@ -80,6 +80,15 @@ Spell _shAstralVapors3 = None
 Spell _shAstralVapors2 = None
 Spell _shAstralVapors1 = None
 
+; Water-Borne Disease Spells (SunHelmDirtyWater.esp)
+Spell _shWaterChills      = None
+Spell _shWaterDampworm    = None
+Spell _shWaterDroops      = None
+Spell _shWaterFeebleLimb  = None
+Spell _shWaterShakes      = None
+Spell _shWaterSwampFever  = None
+Spell _shWaterWither      = None
+
 ; Cached disease state
 String _lastDiseaseName  = "Initial"
 int    _lastDiseaseStage = -1
@@ -213,6 +222,17 @@ Function InitDiseases()
         _shBrainRot1  = Game.GetFormFromFile(0x0B877F, "Skyrim.esm") as Spell
         _shRattles1   = Game.GetFormFromFile(0x0B8781, "Skyrim.esm") as Spell
         _shWitbane1   = Game.GetFormFromFile(0x0B8783, "Skyrim.esm") as Spell
+    endif
+
+    ; Check if SunHelmDirtyWater.esp is active (Water-Borne Diseases)
+    if (Game.GetFormFromFile(0x000812, "SunHelmDirtyWater.esp"))
+        _shWaterChills      = Game.GetFormFromFile(0x000812, "SunHelmDirtyWater.esp") as Spell
+        _shWaterDampworm    = Game.GetFormFromFile(0x000813, "SunHelmDirtyWater.esp") as Spell
+        _shWaterDroops      = Game.GetFormFromFile(0x000814, "SunHelmDirtyWater.esp") as Spell
+        _shWaterFeebleLimb  = Game.GetFormFromFile(0x000815, "SunHelmDirtyWater.esp") as Spell
+        _shWaterShakes      = Game.GetFormFromFile(0x000816, "SunHelmDirtyWater.esp") as Spell
+        _shWaterSwampFever  = Game.GetFormFromFile(0x000817, "SunHelmDirtyWater.esp") as Spell
+        _shWaterWither      = Game.GetFormFromFile(0x000818, "SunHelmDirtyWater.esp") as Spell
     endif
 
     _diseasesInitialized = true
@@ -429,7 +449,7 @@ Function CheckDiseases()
         dName  = "Dampworm"
         dStage = 2
         dCues  = "boils"
-    elseif (_shDampworm1 && player.HasSpell(_shDampworm1))
+    elseif ((_shDampworm1 && player.HasSpell(_shDampworm1)) || (_shWaterDampworm && player.HasSpell(_shWaterDampworm)))
         dName  = "Dampworm"
         dStage = 1
         dCues  = "boils"
@@ -442,7 +462,7 @@ Function CheckDiseases()
         dName  = "Swamp Fever"
         dStage = 2
         dCues  = "boils,chills_shiver"
-    elseif (_shSwampFever1 && player.HasSpell(_shSwampFever1))
+    elseif ((_shSwampFever1 && player.HasSpell(_shSwampFever1)) || (_shWaterSwampFever && player.HasSpell(_shWaterSwampFever)))
         dName  = "Swamp Fever"
         dStage = 1
         dCues  = "boils"
@@ -455,7 +475,7 @@ Function CheckDiseases()
         dName  = "Chills"
         dStage = 2
         dCues  = "chills_shiver,purple_veins"
-    elseif (_shChills1 && player.HasSpell(_shChills1))
+    elseif ((_shChills1 && player.HasSpell(_shChills1)) || (_shWaterChills && player.HasSpell(_shWaterChills)))
         dName  = "Chills"
         dStage = 1
         dCues  = "chills_shiver"
@@ -468,7 +488,7 @@ Function CheckDiseases()
         dName  = "Feeble Limb"
         dStage = 2
         dCues  = "necrotic_skin"
-    elseif (_shFeebleLimb1 && player.HasSpell(_shFeebleLimb1))
+    elseif ((_shFeebleLimb1 && player.HasSpell(_shFeebleLimb1)) || (_shWaterFeebleLimb && player.HasSpell(_shWaterFeebleLimb)))
         dName  = "Feeble Limb"
         dStage = 1
         dCues  = "necrotic_skin"
@@ -481,7 +501,7 @@ Function CheckDiseases()
         dName  = "Shakes"
         dStage = 2
         dCues  = "tremors,blotches"
-    elseif (_shShakes1 && player.HasSpell(_shShakes1))
+    elseif ((_shShakes1 && player.HasSpell(_shShakes1)) || (_shWaterShakes && player.HasSpell(_shWaterShakes)))
         dName  = "Shakes"
         dStage = 1
         dCues  = "tremors"
@@ -494,7 +514,7 @@ Function CheckDiseases()
         dName  = "Wither"
         dStage = 2
         dCues  = "blotches"
-    elseif (_shWither1 && player.HasSpell(_shWither1))
+    elseif ((_shWither1 && player.HasSpell(_shWither1)) || (_shWaterWither && player.HasSpell(_shWaterWither)))
         dName  = "Wither"
         dStage = 1
         dCues  = "blotches"
@@ -507,7 +527,7 @@ Function CheckDiseases()
         dName  = "Droops"
         dStage = 2
         dCues  = "limp_arm"
-    elseif (_shDroops1 && player.HasSpell(_shDroops1))
+    elseif ((_shDroops1 && player.HasSpell(_shDroops1)) || (_shWaterDroops && player.HasSpell(_shWaterDroops)))
         dName  = "Droops"
         dStage = 1
         dCues  = "limp_arm"
