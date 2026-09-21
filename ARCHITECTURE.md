@@ -405,32 +405,112 @@ All 15 diseases are stored as knowledge entries with PostgreSQL full-text search
 
 ## 8. How to Extend This Project
 
-### Adding a New Disease (e.g. from Beyond Skyrim or a Custom Mod)
+### 8.1 Adding a New Disease (e.g. from Beyond Skyrim or a Custom Mod)
 
-1. **Add Spells in `SunHelmCHIMBridge.psc`:**
+1. **Declare Spells in `SunHelmCHIMBridge.psc`:**
    ```papyrus
    Spell _shNewDisease3 = None
    Spell _shNewDisease2 = None
    Spell _shNewDisease1 = None
    ```
-2. **Bind FormIDs in `InitDiseases()`:**
+2. **Bind FormIDs Dynamically in `InitDiseases()`:**
    ```papyrus
-   _shNewDisease3 = Game.GetFormFromFile(0x001234, "NewMod.esp") as Spell
+   if (Game.GetFormFromFile(0x000800, "NewMod.esp"))
+       _shNewDisease3 = Game.GetFormFromFile(0x000803, "NewMod.esp") as Spell
+       _shNewDisease2 = Game.GetFormFromFile(0x000802, "NewMod.esp") as Spell
+       _shNewDisease1 = Game.GetFormFromFile(0x000801, "NewMod.esp") as Spell
+   endif
    ```
-3. **Add Detection Branch in `CheckDiseases()`:**
+3. **Add Detection Branches in `CheckDiseases()`:**
    ```papyrus
+   elseif (_shNewDisease3 && player.HasSpell(_shNewDisease3))
+       dName  = "New Disease"
+       dStage = 3
+       dCues  = "necrotic_skin,tremors"
    elseif (_shNewDisease2 && player.HasSpell(_shNewDisease2))
-       dName = "New Disease"
+       dName  = "New Disease"
        dStage = 2
-       dCues = "blotches,tremors"
+       dCues  = "blotches"
+   elseif (_shNewDisease1 && player.HasSpell(_shNewDisease1))
+       dName  = "New Disease"
+       dStage = 1
+       dCues  = "blotches"
    ```
-4. **Compile Papyrus:**
+4. **Compile Papyrus via Caprica:**
    ```bash
    bash compile.sh
    ```
-5. **Add Lore to `oghma_diseases.sql`:**
-   Add an `INSERT INTO public.oghma` row with the commoner folklore and clinical pathology.
-6. **Deploy:**
+5. **Add Lore to `plugin/ext/sunhelm_needs/oghma_diseases.sql`:**
+   Add an `INSERT INTO public.oghma` row defining both the commoner folklore and clinical pathology.
+6. **Add Clinical Mapping in `plugin/ext/sunhelm_needs/context_pre.php`:**
+   Add the disease entry to the `$clinicalInfo` array with `'name'`, `'pathology'`, and `'cure'`.
+7. **Deploy to HerikaServer:**
    ```bash
    bash install.sh
    ```
+
+---
+
+### 8.2 Adding a New Auxiliary Mod Toggle to the WebUI
+
+When adding support for a new third-party survival or immersion mod:
+1. **Define the Key in `settings.json`:**
+   ```json
+   "mod_custom_addon": true
+   ```
+2. **Add the UI Toggle Card in `config.php` (Tab 3):**
+   ```html
+   <?php $modCustomActive = !empty($settings['mod_custom_addon']); ?>
+   <div class="mod-card">
+       <div class="mod-header">
+           <div class="mod-title">🌟 Custom Add-on (<code>CustomAddon.esp</code>)</div>
+           <span class="<?= $modCustomActive ? 'badge-active' : 'badge-bypassed' ?>">
+               <?= $modCustomActive ? 'Active' : 'Bypassed' ?>
+           </span>
+       </div>
+       <label class="checkbox-label">
+           <input type="checkbox" name="mod_custom_addon" <?= $modCustomActive ? 'checked' : '' ?>>
+           <strong>Enable Custom Immersion Feature</strong>
+       </label>
+       <div class="hint">Description of feature and its fallback behavior when bypassed.</div>
+   </div>
+   ```
+3. **Handle POST in `config.php`:**
+   Add `'mod_custom_addon' => isset($_POST['mod_custom_addon']),` to the settings merge array.
+4. **Enforce in `context_pre.php`:**
+   Read `$settings['mod_custom_addon']` and apply fallback logic when disabled.
+
+---
+
+### 8.3 Troubleshooting & Diagnostic Playbook
+
+| Symptom | Probable Cause | Diagnostic & Resolution Step |
+|---|---|---|
+| **Needs or diseases not updating in `state.json`** | Skyrim quest not running or Papyrus loop stopped | Check `GetStage _SH_CHIM_BridgeQuest` in console. Ensure `DNAM` bit 0 (`Start Game Enabled`) is active in ESP. |
+| **`sunhelm_disease@` payload ignored by Apache** | Root `comm.php` missing disease handler | Run `bash install.sh` to auto-patch `/var/www/html/HerikaServer/comm.php`. Verify with `grep 'sunhelm_disease' /var/www/html/HerikaServer/comm.php`. |
+| **Companions not reacting in dialogue** | Need/disease below minimum threshold | Check `min_stage` and `min_disease_stage` in `config.php`. Verify `$GLOBALS["COMMAND_PROMPT"]` using `php test_disease_injection.php`. |
+| **Companions reacting to visual textures not present on character** | Immersive Diseases toggle is ON without mod installed | Navigate to WebUI &rarr; **Tab 3: Mod Compatibility** and uncheck **Immersive Diseases 2.0**. |
+| **Healers/Alchemists not using clinical pathology** | Clinical lore toggle disabled or database not seeded | Ensure `mod_oghma_clinical_lore` is checked in Tab 3. Click **Re-seed Oghma Medical Lore** button. |
+
+---
+
+### 8.4 Engineering Directives for Autonomous LLM Agents
+
+When reading or maintaining this codebase, automated AI agents must follow these rules:
+1. **Cross-Platform Path Translation:**
+   - Linux / WSL path: `/var/www/html/HerikaServer/ext/sunhelm_needs/`
+   - Windows UNC path: `\\wsl.localhost\DwemerAI4Skyrim3\var\www\html\HerikaServer\ext\sunhelm_needs\`
+   - Local Mod Repository: `H:\Nolvus Awakening\MODS\mods\SunHelm - CHIM AI Bridge\`
+2. **Never Clobber `state.json`:**
+   - `state.json` is actively written by Skyrim game sessions. Never overwrite it with static template files during installations or automated builds.
+3. **Preserve Zero-Dependency Modularity:**
+   - Never add optional ESPs (`SunHelmDiseases.esp`, `SunHelmDirtyWater.esp`, `Immersive Diseases.esp`) as hard masters (`MAST`) in `SunHelm_CHIM_Bridge.esp`.
+   - Always resolve optional forms dynamically using `Game.GetFormFromFile()`. If the mod is absent, the pointer must cleanly resolve to `None`.
+4. **Maintain Bethesda Dual-Loop Papyrus Pattern:**
+   - Base game `RegisterForSingleUpdate(float)` dispatches **only** to `Event OnUpdate()`.
+   - Base game `RegisterForSingleUpdateGameTime(float)` dispatches **only** to `Event OnUpdateGameTime()`.
+   - Never combine or conflate these two event dispatch channels.
+5. **Always Verify Compilation with Caprica:**
+   - Skyrim SE requires `--game=skyrim` and the flags file `-f "TESV_Papyrus_Flags.flg"`.
+   - Always run `bash compile.sh` or the Caprica command to verify that `Scripts/SunHelmCHIMBridge.pex` compiles with zero warnings or errors.
+
