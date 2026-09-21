@@ -184,6 +184,21 @@ bash verify.sh
 
 ---
 
+## Planned
+
+Not promises, and not in any particular order.
+
+**Followers acting, not just asking.** Today a hungry companion can ask you for food; the asking is
+words. CHIM supports custom actions through `_actions.csv`, scoped with `available_to_followers`,
+which would let that request become something that actually happens - buying a meal at the bar,
+accepting food you hand over, asking to stop at an inn. Deferred deliberately: the state pipeline is
+proven and this is a much larger surface, spanning a CSV schema, dispatch back into the game, and a
+failure mode where an NPC can now *do* things rather than only say them.
+
+**WebUI controls for the player-facing prompt templates**, which are still edited as raw strings.
+
+---
+
 ## License
 
 MIT License. Free to use, adapt, and build upon.
