@@ -107,18 +107,20 @@ $needMeta = [
     ['key' => 'cold',    'label' => 'Cold',    'stageKey' => 'cold_stage',    'labelKey' => 'cold_label'],
 ];
 
+// Severity ramps return CSS custom properties rather than literals, so the palette stays defined in
+// exactly one place - the :root block below - and retheming never means hunting through PHP.
 function getStageColor($stage) {
-    if ($stage <= 1) return '#2cb67d';
-    if ($stage == 2) return '#ffbc6b';
-    if ($stage == 3) return '#f5a623';
-    return '#ef4444';
+    if ($stage <= 1) return 'var(--sev-well)';
+    if ($stage == 2) return 'var(--sev-mild)';
+    if ($stage == 3) return 'var(--sev-bad)';
+    return 'var(--sev-dire)';
 }
 
 function getDiseaseColor($stage) {
-    if ($stage == 0) return '#2cb67d';
-    if ($stage == 1) return '#ffbc6b';
-    if ($stage == 2) return '#f5a623';
-    return '#ef4444';
+    if ($stage == 0) return 'var(--sev-well)';
+    if ($stage == 1) return 'var(--sev-mild)';
+    if ($stage == 2) return 'var(--sev-bad)';
+    return 'var(--sev-dire)';
 }
 ?>
 <!DOCTYPE html>
@@ -127,61 +129,183 @@ function getDiseaseColor($stage) {
     <meta charset="UTF-8">
     <title>SunHelm CHIM Bridge - Configuration</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #16161a; color: #fffffe; padding: 24px; margin: 0; }
-        .container { max-width: 880px; margin: 0 auto; background: #242629; border-radius: 8px; padding: 32px; box-shadow: 0 4px 16px rgba(0,0,0,0.5); }
-        h1 { color: #7f5af0; margin-top: 0; margin-bottom: 6px; }
-        .subtitle { color: #94a1b2; font-size: 14px; margin-bottom: 24px; }
-        
+        /*
+         * Apothecary palette: warm charcoal and parchment under copper lamplight, with sage for
+         * health and rust for affliction. Deliberately not the stock violet-on-blue-black dark
+         * theme this started as - that reads as generic tooling and looks like every other CHIM
+         * extension. This one should feel like a herbalist's workbench.
+         *
+         * Every colour is a token. Retheming means editing this block and nothing else; no hex
+         * codes appear below it.
+         */
+        :root {
+            --bg:         #14110f;   /* warm near-black, brown-tinted rather than blue */
+            --panel:      #1e1a16;
+            --inset:      #100d0b;
+            --line:       #332b23;
+            --line-soft:  #2a231d;
+
+            --ink:        #f2e8dc;   /* parchment */
+            --ink-dim:    #ab9a88;
+            --ink-faint:  #7d6f61;
+
+            --accent:     #c8873b;   /* copper - primary */
+            --accent-hi:  #e0a55c;
+            --accent-deep:#9c6529;
+            --accent-wash: rgba(200, 135, 59, 0.10);
+
+            --vital:      #79a163;   /* sage - healthy, active, saved */
+            --caution:    #d9a441;   /* amber - warning */
+            --alarm:      #b2483c;   /* rust - severe */
+
+            /* Severity ramp for needs and disease stages. A single warm progression from sage
+               through amber to rust, so "getting worse" reads at a glance without a legend. */
+            --sev-well:   #79a163;
+            --sev-mild:   #d9a441;
+            --sev-bad:    #c2702f;
+            --sev-dire:   #b2483c;
+        }
+
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--ink); padding: 24px; margin: 0; }
+        .container { max-width: 880px; margin: 0 auto; background: var(--panel); border-radius: 8px; padding: 32px; box-shadow: 0 4px 24px rgba(0,0,0,0.55); border: 1px solid var(--line-soft); }
+        h1 { color: var(--accent); margin-top: 0; margin-bottom: 6px; letter-spacing: 0.2px; }
+        .subtitle { color: var(--ink-dim); font-size: 14px; margin-bottom: 24px; }
+
+        /* Per-tab header banner. All images stack in one frame and cross-fade, so switching tabs
+           never reflows the page.
+
+           `contain`, not `cover`: the artwork is close to square, and cropping it to a wide strip
+           would have shown a slice of helmet and nothing else. Height is generous and scales with
+           the viewport so the figure stays legible on a laptop without dominating a large screen.
+
+           No border and no frame background. The art's own backdrop measures #1e1915, within a
+           shade of --panel, so it sits directly on the page with no seam - a bordered box would
+           put a rectangle around something already blending perfectly. */
+        /* Tall enough that a portrait image is not reduced to a narrow column: these banners are
+           square-ish to portrait, not wide, so height rather than width is what makes them read. */
+        .banner-frame { position: relative; width: 100%; height: clamp(260px, 34vw, 460px);
+                        margin: 4px 0 12px; overflow: hidden; }
+        .tab-banner { position: absolute; inset: 0; width: 100%; height: 100%;
+                      object-fit: contain; object-position: center;
+                      opacity: 0; transition: opacity 0.3s ease; }
+        /* Applied only to artwork with an opaque backdrop. A transparent PNG already blends against
+           any panel colour, and feathering one would fade out hair or a cloak wherever the figure
+           reaches the frame edge - taking away artwork to solve a problem it does not have.
+           For opaque art this softens the boundary; img/normalize.php is what actually matches the
+           backdrop to the page. */
+        .tab-banner.feathered {
+                      -webkit-mask-image: radial-gradient(ellipse 84% 88% at 50% 48%, #000 72%, transparent 100%);
+                              mask-image: radial-gradient(ellipse 84% 88% at 50% 48%, #000 72%, transparent 100%); }
+        .tab-banner.active { opacity: 1; }
+
         /* Tab Styling */
-        .tab-nav { display: flex; gap: 8px; border-bottom: 2px solid #32353b; margin-bottom: 24px; }
-        .tab-btn { background: transparent; border: none; border-bottom: 3px solid transparent; color: #94a1b2; padding: 12px 20px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; }
-        .tab-btn:hover { color: #fffffe; }
-        .tab-btn.active { color: #7f5af0; border-bottom-color: #7f5af0; }
+        .tab-nav { display: flex; gap: 8px; border-bottom: 2px solid var(--line); margin-bottom: 24px; }
+        .tab-btn { background: transparent; border: none; border-bottom: 3px solid transparent; color: var(--ink-dim); padding: 12px 20px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; }
+        .tab-btn:hover { color: var(--ink); }
+        .tab-btn.active { color: var(--accent-hi); border-bottom-color: var(--accent); }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
         /* Status Grid */
-        .status-box { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; background: #16161a; padding: 16px; border-radius: 6px; }
+        .status-box { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; background: var(--inset); padding: 16px; border-radius: 6px; border: 1px solid var(--line-soft); }
         .status-item { text-align: center; }
-        .status-label { font-size: 11px; color: #94a1b2; text-transform: uppercase; letter-spacing: 0.5px; }
+        .status-label { font-size: 11px; color: var(--ink-dim); text-transform: uppercase; letter-spacing: 0.5px; }
         .status-val { font-size: 17px; font-weight: bold; margin-top: 4px; }
-        .status-stage { font-size: 11px; color: #72757e; margin-top: 2px; }
+        .status-stage { font-size: 11px; color: var(--ink-faint); margin-top: 2px; }
 
         /* Disease Status Card */
-        .disease-card { background: #16161a; border-radius: 6px; padding: 20px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; border-left: 5px solid #2cb67d; }
+        .disease-card { background: var(--inset); border-radius: 6px; padding: 20px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; border-left: 5px solid var(--vital); }
         .disease-info h3 { margin: 0 0 6px 0; font-size: 18px; }
-        .disease-info p { margin: 0; color: #94a1b2; font-size: 13px; }
+        .disease-info p { margin: 0; color: var(--ink-dim); font-size: 13px; }
         .disease-badge { padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: bold; }
 
         /* Mod Compatibility Cards */
-        .mod-card { background: #16161a; border: 1px solid #32353b; border-radius: 6px; padding: 18px; margin-bottom: 16px; transition: border-color 0.2s; }
-        .mod-card:hover { border-color: #7f5af0; }
+        .mod-card { background: var(--inset); border: 1px solid var(--line); border-radius: 6px; padding: 18px; margin-bottom: 16px; transition: border-color 0.2s, box-shadow 0.2s; }
+        .mod-card:hover { border-color: var(--accent-deep); box-shadow: 0 0 0 1px var(--accent-wash); }
         .mod-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        .mod-title { font-size: 15px; font-weight: bold; color: #fffffe; }
-        .badge-active { background: #2cb67d; color: #16161a; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; }
-        .badge-bypassed { background: #72757e; color: #fffffe; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; }
+        .mod-title { font-size: 15px; font-weight: bold; color: var(--ink); }
+        .badge-active { background: var(--vital); color: var(--bg); padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; }
+        .badge-bypassed { background: var(--line); color: var(--ink-dim); padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; }
+
+        /* Nested sub-options inside a mod card */
+        .sub-options { margin-top: 12px; padding-left: 18px; border-left: 2px solid var(--line); }
 
         /* Forms */
         .form-group { margin-bottom: 20px; }
-        label { display: block; font-weight: 600; margin-bottom: 8px; color: #fffffe; font-size: 14px; }
+        label { display: block; font-weight: 600; margin-bottom: 8px; color: var(--ink); font-size: 14px; }
         .checkbox-label { display: inline-flex; align-items: center; gap: 8px; margin-right: 20px; font-weight: normal; cursor: pointer; font-size: 14px; }
-        input[type="text"], input[type="number"], textarea, select { width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #72757e; background: #16161a; color: #fffffe; box-sizing: border-box; font-size: 14px; }
+        input[type="checkbox"] { accent-color: var(--accent); width: 15px; height: 15px; }
+        input[type="text"], input[type="number"], textarea, select { width: 100%; padding: 10px; border-radius: 4px; border: 1px solid var(--line); background: var(--inset); color: var(--ink); box-sizing: border-box; font-size: 14px; }
+        input[type="text"]:focus, input[type="number"]:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent-deep); box-shadow: 0 0 0 2px var(--accent-wash); }
         textarea { resize: vertical; min-height: 80px; font-family: inherit; }
-        .hint { font-size: 12px; color: #94a1b2; margin-top: 6px; line-height: 1.4; }
-        
-        .btn-primary { background: #7f5af0; color: #fff; border: none; padding: 12px 24px; font-size: 15px; font-weight: bold; border-radius: 4px; cursor: pointer; transition: background 0.2s; }
-        .btn-primary:hover { background: #6b46c1; }
-        .btn-secondary { background: #32353b; color: #fffffe; border: none; padding: 10px 18px; font-size: 13px; font-weight: bold; border-radius: 4px; cursor: pointer; }
-        .btn-secondary:hover { background: #42464e; }
-        
-        .alert { background: #2cb67d; color: #16161a; padding: 12px; border-radius: 4px; margin-bottom: 20px; font-weight: bold; }
-        .alert-info { background: #3da9fc; color: #16161a; }
-        .card-panel { background: #16161a; border: 1px solid #32353b; border-radius: 6px; padding: 18px; margin-bottom: 20px; }
-        .callout-box { background: rgba(127, 90, 240, 0.1); border-left: 4px solid #7f5af0; padding: 14px; border-radius: 4px; margin-bottom: 20px; font-size: 13px; color: #fffffe; line-height: 1.5; }
+        .hint { font-size: 12px; color: var(--ink-dim); margin-top: 6px; line-height: 1.4; }
+        code { background: var(--inset); border: 1px solid var(--line-soft); border-radius: 3px; padding: 1px 5px; font-size: 12px; color: var(--accent-hi); }
+
+        .btn-primary { background: var(--accent); color: var(--bg); border: none; padding: 12px 24px; font-size: 15px; font-weight: bold; border-radius: 4px; cursor: pointer; transition: background 0.2s; }
+        .btn-primary:hover { background: var(--accent-hi); }
+        .btn-secondary { background: var(--line); color: var(--ink); border: none; padding: 10px 18px; font-size: 13px; font-weight: bold; border-radius: 4px; cursor: pointer; }
+        .btn-secondary:hover { background: var(--accent-deep); }
+
+        .alert { background: var(--vital); color: var(--bg); padding: 12px; border-radius: 4px; margin-bottom: 20px; font-weight: bold; }
+        .alert-info { background: var(--caution); color: var(--bg); }
+        .card-panel { background: var(--inset); border: 1px solid var(--line); border-radius: 6px; padding: 18px; margin-bottom: 20px; }
+        .callout-box { background: var(--accent-wash); border-left: 4px solid var(--accent); padding: 14px; border-radius: 4px; margin-bottom: 20px; font-size: 13px; color: var(--ink); line-height: 1.5; }
     </style>
 </head>
 <body>
 <div class="container">
+    <?php
+    // Header banners, one per tab. Entirely optional: each is rendered only if the file is actually
+    // present, so a missing artwork means no banner rather than a broken-image icon, and the page
+    // is complete without any of them.
+    //
+    // Drop files into img/ using these names. Any web format works - png, jpg, webp - and the first
+    // extension found wins, so there is no need to convert anything.
+    $tabBanners = [
+        'tab-needs'    => 'header-needs',
+        'tab-diseases' => 'header-diseases',
+        'tab-mods'     => 'header-mods',
+    ];
+    // Whether a PNG carries an alpha channel, read straight from the IHDR colour-type byte rather
+    // than decoding the image. Colour types 4 and 6 are grey+alpha and RGB+alpha; 3 is a palette,
+    // which may carry transparency in a tRNS chunk. Cheap enough to do on every page load, which a
+    // full GD decode of a half-megabyte PNG would not be.
+    $pngHasAlpha = static function (string $file): bool {
+        $fh = @fopen($file, 'rb');
+        if (!$fh) { return false; }
+        $head = fread($fh, 26);
+        fclose($fh);
+        if (strlen($head) < 26 || substr($head, 1, 3) !== 'PNG') { return false; }
+        return in_array(ord($head[25]), [3, 4, 6], true);
+    };
+
+    $bannerFor = [];
+    foreach ($tabBanners as $tabId => $base) {
+        foreach (['webp', 'png', 'jpg', 'jpeg', 'gif'] as $ext) {
+            $file = __DIR__ . "/img/{$base}.{$ext}";
+            if (is_file($file)) {
+                $bannerFor[$tabId] = [
+                    // Cache-busted on mtime, so replacing artwork shows up without a hard refresh.
+                    'src' => "img/{$base}.{$ext}?v=" . filemtime($file),
+                    // Transparent art needs no edge feather - it already blends - and feathering it
+                    // would fade out hair or a cloak wherever the figure reaches the frame edge.
+                    'feather' => !($ext === 'png' && $pngHasAlpha($file)),
+                ];
+                break;
+            }
+        }
+    }
+    ?>
+    <?php if ($bannerFor): ?>
+        <div class="banner-frame">
+            <?php foreach ($bannerFor as $tabId => $banner): ?>
+                <img class="tab-banner<?= $banner['feather'] ? ' feathered' : '' ?>"
+                     data-tab="<?= htmlspecialchars($tabId) ?>"
+                     src="<?= htmlspecialchars($banner['src']) ?>" alt="">
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
+
     <h1>SunHelm AI Bridge</h1>
     <div class="subtitle">Unified Survival Needs & Medical Pathology Integration for CHIM</div>
 
@@ -277,10 +401,10 @@ function getDiseaseColor($stage) {
                 <div class="disease-info">
                     <h3><?= htmlspecialchars($dLabel) ?></h3>
                     <p><strong>Visual Symptoms:</strong> <?= htmlspecialchars($dCues) ?></p>
-                    <p style="margin-top: 4px; font-size: 11px; color: #72757e;">Updated: <?= htmlspecialchars($disease['updated_at'] ?? 'Never') ?></p>
+                    <p style="margin-top: 4px; font-size: 11px; color: var(--ink-faint);">Updated: <?= htmlspecialchars($disease['updated_at'] ?? 'Never') ?></p>
                 </div>
                 <div>
-                    <span class="disease-badge" style="background: <?= $borderCol ?>; color: #16161a;">
+                    <span class="disease-badge" style="background: <?= $borderCol ?>; color: var(--bg);">
                         <?= $hasDis ? 'Stage ' . $dStage : 'Clean' ?>
                     </span>
                 </div>
@@ -329,8 +453,8 @@ function getDiseaseColor($stage) {
             <button type="submit" class="btn-primary">&#x1F4BE; Save All Settings</button>
 
             <div class="card-panel" style="margin-top: 32px;">
-                <h3 style="margin-top: 0; color: #7f5af0;">&#x1F4D9; Oghma Infinium Medical Lore Pack</h3>
-                <p style="font-size: 13px; color: #94a1b2; line-height: 1.5;">
+                <h3 style="margin-top: 0; color: var(--accent);">&#x1F4D9; Oghma Infinium Medical Lore Pack</h3>
+                <p style="font-size: 13px; color: var(--ink-dim); line-height: 1.5;">
                     Seeds 15 authentic Tamrielic medical entries (Ataxia, Tetanus, Breakbone Fever, Meningitis, Dracunculiasis, etc.) with <strong>Two-Tier Knowledge separation</strong> into PostgreSQL:
                     Commoners know vanilla folk names, while Alchemists and Healers know true clinical pathology and alchemical remedies.
                 </p>
@@ -453,7 +577,7 @@ function getDiseaseColor($stage) {
                     <?php endif; ?>
                 </div>
 
-                <div style="margin-top:12px; padding-left:18px; border-left:2px solid #444;">
+                <div class="sub-options">
                     <label class="checkbox-label">
                         <input type="checkbox" name="followers_profile_line" <?= !empty($settings['followers_profile_line']) ? 'checked' : '' ?>>
                         Standing note on the follower's own profile
@@ -509,12 +633,31 @@ function getDiseaseColor($stage) {
 </div>
 
 <script>
+// Shows the banner belonging to a tab, if one exists. Written to cope with any subset of the
+// artwork being present: a tab with no image simply leaves the previous one in place rather than
+// blanking the frame, so a half-finished image set still looks deliberate.
+function showBanner(tabId) {
+    const banners = document.querySelectorAll('.tab-banner');
+    if (!banners.length) return;
+    const wanted = document.querySelector('.tab-banner[data-tab="' + tabId + '"]');
+    if (!wanted) return;
+    banners.forEach(b => b.classList.remove('active'));
+    wanted.classList.add('active');
+}
+
 function switchTab(tabId) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     document.getElementById(tabId).classList.add('active');
     event.target.classList.add('active');
+    showBanner(tabId);
 }
+
+// The first tab is marked active in the markup, so its banner has to be shown on load too.
+document.addEventListener('DOMContentLoaded', function () {
+    const first = document.querySelector('.tab-content.active');
+    if (first) showBanner(first.id);
+});
 </script>
 </body>
 </html>

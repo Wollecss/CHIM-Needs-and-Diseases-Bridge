@@ -403,9 +403,101 @@ All 15 diseases are stored as knowledge entries with PostgreSQL full-text search
 
 ---
 
-## 8. How to Extend This Project
+## 8. Follower Condition Subsystem (`lib/sunhelm_followers.php`)
 
-### 8.1 Adding a New Disease (e.g. from Beyond Skyrim or a Custom Mod)
+Optional, and the only part of this extension that is *per actor*. Everything else describes one
+subject — the player — and injects it into whoever is listening. Followers invert that: many
+subjects, each of whom is sometimes the speaker. That is different enough that sharing the player's
+code path would have meant a conditional on nearly every line.
+
+### Data Flow
+
+```
+SunHelm - Individual Follower Needs (SKSE, C++)
+  │  queues a payload when a companion's reported condition changes
+  │  exposes it as three Papyrus natives
+  ▼
+SunHelmCHIMBridge.psc  →  DrainFollowerUpdates()
+  │  AIAgentFunctions.logMessageForActor(payload, "infoaction", npcName)
+  ▼
+preprocessing.php  →  sunhelmFollowersIngestCurrentRequest()
+  │  parsed, written to state.json → followers{} via atomic temp-file rename
+  ▼
+globals.php     →  chimRegisterActorProfileEnricher('…condition', …, 60)
+context_pre.php →  chimRegisterPromptInjection('prompt_bottom', '…turn', …, 70)
+```
+
+### Payload Grammar
+
+```
+sunhelm_follower@<Name>@<hunger 0-5>@<thirst 0-5>@<drunk 0|1>@<drinks>@<diseased 0|1>@<gold>
+sunhelm_follower_gone@<Name>
+```
+
+Positional, matching the existing `sunhelm_needs@` payload. **New fields append to the end**, so an
+older server reading a newer payload ignores what it does not recognise rather than failing to parse
+the line at all.
+
+### Prompt Registration & Backward Compatibility
+
+Both registrations are feature-detected, the same pattern `ext/CHIM-iNeed` uses:
+
+```php
+if (function_exists('chimRegisterPromptInjection')) {
+    chimRegisterPromptInjection('prompt_bottom', $id, $text, 70);
+} else {
+    $GLOBALS["COMMAND_PROMPT"] .= "\n\n" . $text;   // servers older than the API
+}
+```
+
+The player-facing half still injects directly into `COMMAND_PROMPT` and is deliberately untouched:
+rewriting a working prompt path is a change with no upside and a real chance of altering how existing
+saves behave.
+
+### Two Non-Obvious Rules That Cost Real Debugging
+
+**Lazy initialisation, never `OnInit`.** `OnInit` runs exactly once in a save's lifetime. A flag set
+only there stays at its default forever for anyone adding the feature to a game already in progress —
+which is everyone updating the mod. `DrainFollowerUpdates()` resolves the presence check on every
+poll until it gets an answer, the same way the disease section binds forms lazily.
+
+**Severity must forbid deferral, not merely scale.** Grading instructions by stage was not enough. A
+follower told to raise a need raised it and then talked himself out of it — *"I could do with some
+stew, but you look worse than I do, the hunger can wait"* — because the player's own condition sits
+in the same prompt and supplies a noble reason to defer. Stating a need is not pressing one. The
+stage 4 and 5 clauses explicitly rule out understating it, joking it off, or putting anyone else's
+troubles first.
+
+### Observable vs Private State
+
+`sunhelmFollowersDescribe($follower, $observableOnly = true)` returns only what a third party could
+perceive — drunkenness and illness. Hunger and thirst are never shared with other NPCs, because you
+cannot tell by looking that somebody is thirsty. This is what lets a passing guard remark that your
+companion looks unwell without also knowing he has not eaten.
+
+### Optionality
+
+Three independent guards, so the integration is inert rather than merely quiet:
+
+1. **Papyrus** checks `Game.GetFormFromFile(0x000800, "SunHelmFollowerNeeds.esp")` before calling any
+   native. Without the mod the drain never runs — no unbound-native errors every fifteen seconds.
+2. **The natives fail soft.** Missing DLL returns `0` and `""`, so the loop does nothing.
+3. **The server needs no guard at all.** No payloads arrive, so `followers{}` stays empty and the
+   enricher returns `''` for every actor.
+
+Plus `mod_sunhelm_followers` in the WebUI, checked before state is read, before a prompt is built,
+and before anything is registered with CHIM.
+
+**Compile-time is the one real dependency, and only for contributors:** rebuilding
+`SunHelmCHIMBridge.psc` needs `SunHelmFollowerNeeds.psc` on the import path, since the bridge calls
+its natives. `compile.sh` handles it via `FOLLOWER_SCRIPTS`. This does not make the shipped `.pex`
+depend on anything.
+
+---
+
+## 9. How to Extend This Project
+
+### 9.1 Adding a New Disease (e.g. from Beyond Skyrim or a Custom Mod)
 
 1. **Declare Spells in `SunHelmCHIMBridge.psc`:**
    ```papyrus
@@ -451,7 +543,7 @@ All 15 diseases are stored as knowledge entries with PostgreSQL full-text search
 
 ---
 
-### 8.2 Adding a New Auxiliary Mod Toggle to the WebUI
+### 9.2 Adding a New Auxiliary Mod Toggle to the WebUI
 
 When adding support for a new third-party survival or immersion mod:
 1. **Define the Key in `settings.json`:**
@@ -482,7 +574,7 @@ When adding support for a new third-party survival or immersion mod:
 
 ---
 
-### 8.3 Troubleshooting & Diagnostic Playbook
+### 9.3 Troubleshooting & Diagnostic Playbook
 
 | Symptom | Probable Cause | Diagnostic & Resolution Step |
 |---|---|---|
@@ -494,7 +586,7 @@ When adding support for a new third-party survival or immersion mod:
 
 ---
 
-### 8.4 Engineering Directives for Autonomous LLM Agents
+### 9.4 Engineering Directives for Autonomous LLM Agents
 
 When reading or maintaining this codebase, automated AI agents must follow these rules:
 1. **Cross-Platform Path Translation:**
