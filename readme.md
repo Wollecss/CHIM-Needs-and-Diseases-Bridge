@@ -4,6 +4,16 @@ A comprehensive survival and medical immersion bridge connecting **SunHelm**, **
 
 NPCs throughout Skyrim now perceive, react to, and diagnose the player's real-time physical survival needs, stage-based disease progressions, and visible cosmetic symptoms.
 
+> ### 🧩 100% Modular & Fully Toggleable
+> **Zero hard requirements beyond core SunHelm (`SunHelmSurvival.esp`).**  
+> Every single feature and auxiliary mod integration in this bridge is **completely optional and independently toggleable in the WebUI (`config.php`)**:
+> - **Survival Needs Toggles:** Enable or disable Hunger, Thirst, Fatigue, and Cold individually, with custom stage sensitivity sliders.
+> - **SunHelm Diseases (`SunHelmDiseases.esp`):** Toggle 3-stage progressive sickness (Stages 1–3) on or off. Bypassing flattens diseases to classic static Skyrim illnesses.
+> - **Water-Borne Diseases (`SunHelmDirtyWater.esp`):** Toggle dirty-water infection detection on or off.
+> - **Immersive Diseases 2.0 (`Immersive Diseases.esp`):** Toggle visual RaceMenu skin/vein overlays and posture mirroring. Bypassing ensures NPCs never hallucinate visual textures not installed in your game.
+> - **Two-Tier Oghma Clinical Lore:** Toggle advanced clinical diagnoses (Tetanus, Breakbone Fever, Meningitis) for master healers vs. vanilla folklore.
+> - **Ambient Proximity Barks:** Toggle town passersby commenting aloud on your sickness, with configurable cooldown timers.
+
 > 📖 **Developer & Agent Specification:**  
 > For in-depth technical details on the Bethesda Papyrus event loops, Spriggit ESP record schemas, Base64 communication protocol, and PostgreSQL Oghma RAG indexing, see **[ARCHITECTURE.md](ARCHITECTURE.md)**.
 
@@ -49,6 +59,11 @@ NPCs react according to their social class and profession:
   - **Real-Time Polling:** Every 15 seconds during active gameplay.
   - **Game-Time Polling:** Every 0.25 in-game hours during sleep, waiting, or fast travel.
   - **Immediate Cure Detection:** Detects shrine prayers or cure disease potions on the next tick and instantly resets NPC dialogue prompts back to healthy.
+
+### 6. Granular WebUI Control Panel (Tabbed & Modular)
+- **Tab 1 (Survival Needs):** Toggle individual needs (Hunger, Thirst, Fatigue, Cold), select minimum report thresholds, and edit the companion prompt template.
+- **Tab 2 (Diseases & Medicine):** Set minimum disease stage detection, toggle ambient town barks with custom cooldown timers, customize disease prompt templates, and trigger Oghma database re-seeding with one click.
+- **Tab 3 (Mod Compatibility):** Dedicated toggles and active/bypassed status indicators for every auxiliary mod (SunHelm Diseases, Water-Borne Diseases, Immersive Diseases 2.0, Two-Tier Clinical Lore). Every toggle updates instantly with persistent cross-tab saving.
 
 ---
 

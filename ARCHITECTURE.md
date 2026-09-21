@@ -11,14 +11,18 @@
 ```mermaid
 flowchart TD
     subgraph SkyrimEngine ["Skyrim SE / AE Engine (Process Runtime)"]
-        SH["SunHelm Survival & Needs\n(Globals & Spells)"]
-        ID["Immersive Diseases 2.0\n(RaceMenu Visual Overlays)"]
+        SH["SunHelm Survival & Needs\n(Required Core Master)"]
+        SHD["SunHelm Diseases\n(Optional Add-on)"]
+        SHW["Water-Borne Diseases\n(Optional Add-on)"]
+        ID["Immersive Diseases 2.0\n(Optional Overlays)"]
         BridgeQuest["SunHelm_CHIM_Bridge.esp\n(_SH_CHIM_BridgeQuest : FormID 0x00000800)"]
         BridgeScript["SunHelmCHIMBridge.psc / .pex\n(Dual Polling Loop: 15s real / 0.25h game)"]
         CHIM_SKSE["CHIM AI Agent SKSE Plugin\n(AIAgentFunctions Native Library)"]
         
         SH --> BridgeScript
-        ID --> BridgeScript
+        SHD -.->|Dynamic Form Binding| BridgeScript
+        SHW -.->|Dynamic Form Binding| BridgeScript
+        ID -.->|Dynamic Form Binding| BridgeScript
         BridgeQuest --> BridgeScript
         BridgeScript -->|AIAgentFunctions.logMessage| CHIM_SKSE
     end
