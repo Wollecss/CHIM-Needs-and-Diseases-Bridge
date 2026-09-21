@@ -29,8 +29,10 @@ function sunhelmFollowersSettingsPath(): string
 function sunhelmFollowersDefaultSettings(): array
 {
     return [
-        // Master switch for everything in this file. Off leaves the player side untouched.
-        'followers_enabled' => true,
+        // Master switch for everything in this file. Named mod_* to match the other optional-mod
+        // toggles in the WebUI, because that is what this is: support for a mod you may not have.
+        // Off leaves the player side untouched.
+        'mod_sunhelm_followers' => true,
         // Standing line on the follower's own profile: what they are, always available to the model.
         'followers_profile_line' => true,
         // Per-turn nudge to actually bring it up. Separate from the profile line because one is
@@ -80,7 +82,7 @@ function sunhelmFollowersSettings(): array
 function sunhelmFollowersIsEnabled(): bool
 {
     $settings = sunhelmFollowersSettings();
-    return !empty($settings['followers_enabled']);
+    return !empty($settings['mod_sunhelm_followers']);
 }
 
 function sunhelmFollowersReadState(): array

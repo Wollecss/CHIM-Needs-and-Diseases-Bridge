@@ -106,6 +106,19 @@ NPCs react according to their social class and profession:
 - [SunHelm Diseases](https://www.nexusmods.com/skyrimspecialedition/mods/39414)
 - *(Optional & Supported)* **Water-Borne Diseases for SunHelm (`SunHelmDirtyWater.esp`)** - Dynamic dirty water contraction spells detected natively without master dependencies.
 - *(Optional & Supported)* [Immersive Diseases 2.0](https://www.nexusmods.com/skyrimspecialedition/mods/79111) for visual skin & vein overlays.
+- *(Optional & Supported)* [SunHelm - Individual Follower Needs](https://github.com/Wollecss/SunHelm-Individual-Follower-Needs) - gives each **companion** their own hunger, thirst, drink and illness, so followers speak from their own condition rather than only reacting to yours.
+
+### Follower support is optional in both directions
+
+Nothing about the follower integration is required. The bridge checks at runtime whether that
+plugin's ESP is present before it calls anything, so without it you get silence - no errors, no log
+spam, and the player-facing half of this mod is untouched. It can also be switched off from the
+WebUI while the mod is installed.
+
+**Contributors recompiling `SunHelmCHIMBridge.psc` do need its script on the import path**, since
+the bridge calls its natives. `compile.sh` already points at it; if you keep that mod somewhere
+else, change `FOLLOWER_SCRIPTS` at the top. This is a build-time requirement only - it does not make
+the finished bridge depend on the mod, and the shipped `.pex` needs nothing extra.
 
 ---
 

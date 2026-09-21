@@ -15,7 +15,7 @@
     "mod_immersive_diseases": true,
     "mod_oghma_clinical_lore": true,
 
-    "followers_enabled": true,
+    "mod_sunhelm_followers": true,
     "followers_profile_line": true,
     "followers_turn_instruction": true,
     "followers_mention_chance": 35,

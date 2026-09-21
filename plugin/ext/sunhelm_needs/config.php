@@ -54,6 +54,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (!isset($_POST['action']) || $_POST
         'mod_waterborne_diseases'       => isset($_POST['mod_waterborne_diseases']),
         'mod_immersive_diseases'        => isset($_POST['mod_immersive_diseases']),
         'mod_oghma_clinical_lore'       => isset($_POST['mod_oghma_clinical_lore']),
+        // Follower condition (SunHelm - Individual Follower Needs)
+        'mod_sunhelm_followers'         => isset($_POST['mod_sunhelm_followers']),
+        'followers_profile_line'        => isset($_POST['followers_profile_line']),
+        'followers_turn_instruction'    => isset($_POST['followers_turn_instruction']),
+        'followers_report_needs'        => isset($_POST['followers_report_needs']),
+        'followers_report_drunk'        => isset($_POST['followers_report_drunk']),
+        'followers_report_disease'      => isset($_POST['followers_report_disease']),
+        'followers_observable_to_others' => isset($_POST['followers_observable_to_others']),
+        'followers_mention_chance'      => max(0, min(100, (int)($_POST['followers_mention_chance'] ?? 35))),
+        'followers_min_stage'           => max(1, min(5, (int)($_POST['followers_min_stage'] ?? 3))),
     ]);
     file_put_contents($settingsFile, json_encode($newSettings, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
     $saved = true;
@@ -75,6 +85,15 @@ $settings = file_exists($settingsFile) ? json_decode(file_get_contents($settings
     'mod_waterborne_diseases'       => true,
     'mod_immersive_diseases'        => true,
     'mod_oghma_clinical_lore'       => true,
+    'mod_sunhelm_followers'         => true,
+    'followers_profile_line'        => true,
+    'followers_turn_instruction'    => true,
+    'followers_report_needs'        => true,
+    'followers_report_drunk'        => true,
+    'followers_report_disease'      => true,
+    'followers_observable_to_others' => true,
+    'followers_mention_chance'      => 35,
+    'followers_min_stage'           => 3,
 ];
 
 $state    = file_exists($stateFile) ? json_decode(file_get_contents($stateFile), true) : [];
@@ -402,6 +421,85 @@ function getDiseaseColor($stage) {
                 <div class="hint">
                     Allows master alchemists, healers, and scholars (Arcadia, Danica, Farengar, Colette, etc.) to diagnose illnesses by true clinical pathology (Tetanus, Breakbone Fever, Meningitis, Dracunculiasis, Ergotism) and prescribe alchemical remedies.<br>
                     <em>When bypassed:</em> All NPCs, including expert healers, use traditional Skyrim folk names (Rockjoint, Bone Break Fever) and divine shrine advice.
+                </div>
+            </div>
+
+            <!-- Mod 5: Follower condition -->
+            <?php
+            $modFollowersActive = !empty($settings['mod_sunhelm_followers']);
+            // Detected rather than declared: the card reports whether follower data has actually
+            // arrived, so "I enabled it and nothing happens" is answerable from this page instead
+            // of by reading logs.
+            $knownFollowers = array_keys((array)($state['followers'] ?? []));
+            $followerSeen   = count($knownFollowers) > 0;
+            ?>
+            <div class="mod-card">
+                <div class="mod-header">
+                    <div class="mod-title">&#x1F9D1;&#x200D;&#x1F91D;&#x200D;&#x1F9D1; Follower Condition (<code>SunHelm - Individual Follower Needs</code>)</div>
+                    <span class="<?= $modFollowersActive ? 'badge-active' : 'badge-bypassed' ?>">
+                        <?= $modFollowersActive ? 'Active' : 'Bypassed' ?>
+                    </span>
+                </div>
+                <label class="checkbox-label">
+                    <input type="checkbox" name="mod_sunhelm_followers" <?= $modFollowersActive ? 'checked' : '' ?>>
+                    <strong>Let followers speak from their own hunger, thirst, drink and illness</strong>
+                </label>
+                <div class="hint">
+                    Requires the <em>SunHelm - Individual Follower Needs</em> SKSE plugin, which tracks each companion separately. Entirely optional: without it no follower data is ever sent and nothing here runs.<br>
+                    <?php if ($followerSeen): ?>
+                        <strong>Reporting now:</strong> <?= htmlspecialchars(implode(', ', $knownFollowers)) ?>
+                    <?php else: ?>
+                        <em>No follower data received yet.</em> Expected if you do not have that mod, or have not travelled with a companion since installing it.
+                    <?php endif; ?>
+                </div>
+
+                <div style="margin-top:12px; padding-left:18px; border-left:2px solid #444;">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="followers_profile_line" <?= !empty($settings['followers_profile_line']) ? 'checked' : '' ?>>
+                        Standing note on the follower's own profile
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="followers_turn_instruction" <?= !empty($settings['followers_turn_instruction']) ? 'checked' : '' ?>>
+                        Prompt them to bring it up in conversation
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="followers_observable_to_others" <?= !empty($settings['followers_observable_to_others']) ? 'checked' : '' ?>>
+                        Let other NPCs notice a drunk or ill companion
+                    </label>
+                    <div class="hint" style="margin-top:4px;">
+                        Only what is visible is shared with others - a stranger can see a companion is drunk or unwell, never that they are hungry or thirsty.
+                    </div>
+
+                    <label class="checkbox-label" style="margin-top:10px;">
+                        <input type="checkbox" name="followers_report_needs" <?= !empty($settings['followers_report_needs']) ? 'checked' : '' ?>>
+                        Report hunger and thirst
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="followers_report_drunk" <?= !empty($settings['followers_report_drunk']) ? 'checked' : '' ?>>
+                        Report drunkenness
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="followers_report_disease" <?= !empty($settings['followers_report_disease']) ? 'checked' : '' ?>>
+                        Report illness
+                    </label>
+
+                    <div style="margin-top:12px;">
+                        <label><strong>Chance of mentioning it when you talk to them</strong></label><br>
+                        <input type="number" name="followers_mention_chance" min="0" max="100"
+                               value="<?= (int)($settings['followers_mention_chance'] ?? 35) ?>"> %
+                        <div class="hint">
+                            The dial that decides between characterful and exhausting. Rises automatically when a follower is badly off, and a starving one always speaks regardless.
+                        </div>
+                    </div>
+
+                    <div style="margin-top:12px;">
+                        <label><strong>Stay quiet below stage</strong></label><br>
+                        <input type="number" name="followers_min_stage" min="1" max="5"
+                               value="<?= (int)($settings['followers_min_stage'] ?? 3) ?>">
+                        <div class="hint">
+                            1 Satisfied &middot; 2 Peckish &middot; 3 Hungry &middot; 4 Ravenous &middot; 5 Starving. Being slightly peckish is not worth a line of dialogue.
+                        </div>
+                    </div>
                 </div>
             </div>
 
