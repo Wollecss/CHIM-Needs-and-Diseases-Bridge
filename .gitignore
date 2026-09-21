@@ -1,0 +1,21 @@
+# OS and temporary files
+.DS_Store
+Thumbs.db
+*.bak
+*.tmp
+*.log
+nul
+
+# Mod Organizer 2 local metadata
+meta.ini
+
+# HerikaServer runtime state (dynamically updated by in-game events)
+plugin/ext/sunhelm_needs/state.json
+
+# Local dev/test scratch scripts
+test
+test_context.php
+test_disease_injection.php
+verify_state.php
+root_comm_snapshot.php
+spriggit-plugin-editor.skill

@@ -1,0 +1,1 @@
+<?php // Handled by context_pre.php - do not inject here (system prompt is already frozen by main.php:2646).

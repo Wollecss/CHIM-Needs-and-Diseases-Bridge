@@ -1,0 +1,10 @@
+{
+    "name": "SunHelm Needs Bridge",
+    "display_name": "SunHelm Needs Bridge",
+    "version": "2.0.0",
+    "author": "Wollecs",
+    "description": "Reads the player's hunger, thirst, fatigue, and cold from SunHelm and injects them into CHIM dialogue context.",
+    "config_url": "/HerikaServer/ext/sunhelm_needs/config.php",
+    "config_url_target": "_blank",
+    "enabled": true
+}
