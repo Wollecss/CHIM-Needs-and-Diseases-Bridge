@@ -19,3 +19,6 @@ test_disease_injection.php
 verify_state.php
 root_comm_snapshot.php
 spriggit-plugin-editor.skill
+
+# Packaged release archives
+dist/
