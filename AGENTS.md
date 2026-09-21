@@ -89,3 +89,4 @@ wsl -d DwemerAI4Skyrim3 php test_disease_injection.php
    - If `mod_immersive_diseases` is toggled off in `settings.json`, `context_pre.php` must NEVER print visual texture descriptors (purple veins, blotches, rigid elbows) into prompts. Use generic physical malaise descriptors instead.
 5. **CRLF Line Endings:**
    - Files edited on Windows may contain CRLF. Ensure bash scripts use `set -euo pipefail` and handle line endings gracefully.
+

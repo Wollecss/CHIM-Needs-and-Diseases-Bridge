@@ -3,6 +3,36 @@
 // Executes before the system prompt is compiled and frozen.
 // Injects the player's physical condition and visible disease symptoms into $GLOBALS["COMMAND_PROMPT"].
 
+// ====================================================================
+// 0. Follower condition (see lib/sunhelm_followers.php)
+// ====================================================================
+// Deliberately ahead of the player section and its early returns: those bail out when there is no
+// player state yet, and a hungry follower on a save where the player has never been tracked would
+// otherwise be dropped silently. The standing profile line is registered in globals.php; what
+// belongs here is the per-turn decision, because that needs to know who is speaking.
+require_once __DIR__ . DIRECTORY_SEPARATOR . 'lib' . DIRECTORY_SEPARATOR . 'sunhelm_followers.php';
+
+$followerLines = array_values(array_filter([
+    sunhelmFollowersTurnInstruction(),
+    sunhelmFollowersObservableInjection(),
+]));
+
+if ($followerLines) {
+    $followerPayload = implode("\n\n", $followerLines);
+    if (function_exists('chimRegisterPromptInjection')) {
+        chimRegisterPromptInjection(
+            'prompt_bottom',
+            SUNHELM_FOLLOWER_PLUGIN_ID . '.turn',
+            $followerPayload,
+            70
+        );
+    } elseif (!empty($GLOBALS["COMMAND_PROMPT"])) {
+        $GLOBALS["COMMAND_PROMPT"] .= "\n\n" . $followerPayload;
+    } else {
+        $GLOBALS["COMMAND_PROMPT"] = $followerPayload;
+    }
+}
+
 $stateFile    = __DIR__ . "/state.json";
 $settingsFile = __DIR__ . "/settings.json";
 

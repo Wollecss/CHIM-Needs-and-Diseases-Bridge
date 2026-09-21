@@ -13,5 +13,15 @@
     "mod_sunhelm_diseases": true,
     "mod_waterborne_diseases": true,
     "mod_immersive_diseases": true,
-    "mod_oghma_clinical_lore": true
+    "mod_oghma_clinical_lore": true,
+
+    "followers_enabled": true,
+    "followers_profile_line": true,
+    "followers_turn_instruction": true,
+    "followers_mention_chance": 35,
+    "followers_min_stage": 3,
+    "followers_report_needs": true,
+    "followers_report_drunk": true,
+    "followers_report_disease": true,
+    "followers_observable_to_others": true
 }

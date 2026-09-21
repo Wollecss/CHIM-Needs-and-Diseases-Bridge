@@ -22,12 +22,27 @@ fi
 
 mkdir -p "$DEST_DIR"
 
-# Copy plugin files, preserving live state.json if it already exists.
-for f in context_pre.php context.php comm.php config.php update.php manifest.json settings.json preprocessing.php oghma_diseases.sql; do
-    if [ -f "$SRC_DIR/$f" ]; then
-        cp -f "$SRC_DIR/$f" "$DEST_DIR/$f"
-        echo "  installed $f"
-    fi
+# Copy every plugin file, preserving live state.json if it already exists.
+#
+# Deliberately not a hardcoded list any more. It was one, and adding lib/sunhelm_followers.php
+# broke the server: context_pre.php was on the list and shipped, the library it requires was not,
+# and every CHIM request then died on a missing include. A list that has to be edited in step with
+# the source is a list that will be forgotten again.
+for f in "$SRC_DIR"/*.php "$SRC_DIR"/*.json "$SRC_DIR"/*.sql; do
+    [ -f "$f" ] || continue
+    name="$(basename "$f")"
+    [ "$name" = "state.json" ] && continue   # Live game data; handled below.
+    cp -f "$f" "$DEST_DIR/$name"
+    echo "  installed $name"
+done
+
+# Subdirectories (lib/, migrations/) mirrored wholesale for the same reason.
+for d in "$SRC_DIR"/*/; do
+    [ -d "$d" ] || continue
+    name="$(basename "$d")"
+    mkdir -p "$DEST_DIR/$name"
+    cp -f "$d"* "$DEST_DIR/$name/" 2>/dev/null || true
+    echo "  installed $name/"
 done
 
 # Seed state.json if missing (never clobber live game data).

@@ -1,9 +1,20 @@
 <?php
 // Catch SunHelm needs and disease updates sent through AIAgentFunctions
+require_once __DIR__ . DIRECTORY_SEPARATOR . 'lib' . DIRECTORY_SEPARATOR . 'sunhelm_followers.php';
+
 $req = $GLOBALS["gameRequest"] ?? (isset($gameRequest) ? $gameRequest : null);
 
 if (is_array($req)) {
     $msg = $req[3] ?? '';
+
+    // Follower payloads are per actor and arrive more often than the player's, so they take their
+    // own parser and return early rather than adding another branch to the chain below. Doing this
+    // before state.json is read also keeps the two writers off the same in-memory copy: the
+    // follower path does its own atomic read-modify-write.
+    if (sunhelmFollowersIngestCurrentRequest((string) $msg)) {
+        return;
+    }
+
     $stateFile = __DIR__ . '/state.json';
     $state = file_exists($stateFile) ? json_decode(file_get_contents($stateFile), true) : [];
     if (!is_array($state)) {

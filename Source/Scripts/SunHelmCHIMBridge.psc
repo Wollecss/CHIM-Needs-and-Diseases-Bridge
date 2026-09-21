@@ -94,11 +94,22 @@ String _lastDiseaseName  = "Initial"
 int    _lastDiseaseStage = -1
 float  _lastAmbientBarkTime = 0.0
 
+; Follower bridge. SunHelm - Individual Follower Needs owns all per-follower state; this script only
+; forwards what it queues.
+;
+; Tri-state, and resolved lazily rather than in OnInit, for the reason the disease section is lazy
+; too: OnInit runs once in a save's lifetime. Anyone who adds this bridge to a game already in
+; progress - which is everyone updating the mod - never runs it again, so a flag set only there
+; stays at its default forever and the feature silently never works.
+; 0 = not yet checked, 1 = present, 2 = absent
+int    _followerBridgeState = 0
+
 ; ====================================================================
 ; --- Lifecycle Events ---
 ; ====================================================================
 Event OnInit()
     Debug.Notification("[SunHelm Bridge] Initialized")
+    InitFollowerBridge()
     CheckSunHelmNeeds()
     CheckDiseases()
     RegisterForSingleUpdate(5.0)
@@ -108,6 +119,10 @@ EndEvent
 Event OnUpdate()
     CheckSunHelmNeeds()
     CheckDiseases()
+    ; Only on the real-time loop. The game-time loop can fire several times in a row when the
+    ; player waits or sleeps, and follower updates are already change-gated by the DLL - draining
+    ; them twice per cycle would send nothing new and cost two native calls for the privilege.
+    DrainFollowerUpdates()
     RegisterForSingleUpdate(15.0)
 EndEvent
 
@@ -598,4 +613,68 @@ Function CheckDiseases()
             endif
         endif
     endif
+EndFunction
+
+; ====================================================================
+; --- Follower Bridge (SunHelm - Individual Follower Needs) ---
+; ====================================================================
+; That mod tracks hunger, thirst, drink and illness per companion and queues a short payload
+; whenever one of them changes in a way worth reporting. This script is only the courier: it drains
+; the queue and forwards each entry to the follower it describes.
+;
+; The split is deliberate. Keeping CHIM's transport here rather than inside the DLL means the
+; protocol can follow CHIM as it changes without anyone rebuilding a C++ plugin.
+
+Function InitFollowerBridge()
+    if (_followerBridgeState != 0)
+        return
+    endif
+
+    ; Same presence test the disease section uses for its optional plugins: resolve a form that
+    ; only exists if the mod is installed. 0x000800 is _SHFN_SchemaVersion, the first record in
+    ; that plugin and the one least likely to ever move.
+    ;
+    ; The plugin is ESL-flagged, so its runtime FormID is FExxx800 rather than the 0x800 written
+    ; here - GetFormFromFile takes the ID as authored and resolves the load-order prefix itself,
+    ; which is exactly why the lookup is done by file and local ID rather than a runtime FormID.
+    if (Game.GetFormFromFile(0x000800, "SunHelmFollowerNeeds.esp") != None)
+        _followerBridgeState = 1
+        Debug.Trace("[SunHelm Bridge] Follower needs detected; per-follower context enabled.")
+    else
+        _followerBridgeState = 2
+        Debug.Trace("[SunHelm Bridge] SunHelmFollowerNeeds.esp not found; follower context disabled.")
+    endif
+EndFunction
+
+Function DrainFollowerUpdates()
+    ; Resolved here rather than trusting OnInit, so a save that predates this feature still picks
+    ; it up on the next poll.
+    InitFollowerBridge()
+
+    if (_followerBridgeState != 1)
+        return
+    endif
+
+    int pending = SunHelmFollowerNeeds.GetPendingCount()
+    if (pending <= 0)
+        return
+    endif
+
+    ; Bounded rather than draining to empty. The DLL caps its own queue, but a burst - the whole
+    ; party walking into an inn at once - would otherwise turn one poll into a long run of native
+    ; calls and server messages on the main thread. Whatever is left waits for the next tick.
+    int budget = 6
+    while (pending > 0 && budget > 0)
+        string npcName = SunHelmFollowerNeeds.PeekPendingActor()
+        string payload = SunHelmFollowerNeeds.ConsumePending()
+
+        ; Consume always runs, even when the name is unusable, so a malformed entry is discarded
+        ; rather than blocking the queue behind it forever.
+        if (npcName != "" && payload != "")
+            AIAgentFunctions.logMessageForActor(payload, "infoaction", npcName)
+        endif
+
+        pending -= 1
+        budget -= 1
+    endwhile
 EndFunction
