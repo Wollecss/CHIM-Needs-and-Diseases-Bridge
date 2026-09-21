@@ -4,6 +4,9 @@ A comprehensive survival and medical immersion bridge connecting **SunHelm**, **
 
 NPCs throughout Skyrim now perceive, react to, and diagnose the player's real-time physical survival needs, stage-based disease progressions, and visible cosmetic symptoms.
 
+> 📖 **Developer & Agent Specification:**  
+> For in-depth technical details on the Bethesda Papyrus event loops, Spriggit ESP record schemas, Base64 communication protocol, and PostgreSQL Oghma RAG indexing, see **[ARCHITECTURE.md](ARCHITECTURE.md)**.
+
 ---
 
 ## Features
